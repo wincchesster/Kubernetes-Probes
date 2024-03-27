@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: healthchecker-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: healthchecker
+  template:
+    metadata:
+      labels:
+        app: healthchecker
+    spec:
+      volumes:
+        - name: healthchecker-vol
+          persistentVolumeClaim:
+            claimName: healthchecker-volume-claim
+      containers:
+        - name: app
+          image: wincchesster/healthchecker:latest
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - mountPath: "/mydir"
+              name: healthchecker-vol
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "250m"
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          env:
+          - name: test3
+            value: healthchecker
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8080
+          readinessProbe:
+            exec:
+                command:
+                - sh
+                - -c
+                - test -f /web.py
+            initialDelaySeconds: 15
+            periodSeconds: 5
